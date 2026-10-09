@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>收文 · 我的稍后读</title>
+<meta name="theme-color" content="#002FA7" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23002FA7'/%3E%3Cpath d='M28 34h44M28 50h44M28 66h28' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <span class="brand-name">收文</span>
+  </div>
+  <label class="search">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="search" type="search" placeholder="搜索标题、公众号、正文、备注" autocomplete="off" />
+  </label>
+  <button id="btnAdd" class="btn primary">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>添加文章</span>
+  </button>
+  <button id="btnMore" class="btn ghost icon-only" title="更多">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>
+  </button>
+</header>
+
+<nav class="filters">
+  <div class="chips" id="statusChips"></div>
+  <div class="chips cats" id="catChips"></div>
+</nav>
+
+<main class="board">
+  <div id="list" class="list"></div>
+  <div id="empty" class="empty hidden">
+    <div class="empty-art"></div>
+    <h2 id="emptyTitle">还没有收进来的文章</h2>
+    <p id="emptyText">把公众号文章链接粘贴进来，之后就能在这里统一慢慢看。</p>
+    <button class="btn primary" data-act="openImport">添加第一篇文章</button>
+  </div>
+</main>
+
+<div id="bulkbar" class="bulkbar hidden">
+  <span id="bulkCount"></span>
+  <div class="bulk-actions">
+    <button class="btn ghost sm" data-bulk="read">标为已读</button>
+    <button class="btn ghost sm" data-bulk="unread">标为未读</button>
+    <button class="btn ghost sm" data-bulk="category">改分类</button>
+    <button class="btn danger-ghost sm" data-bulk="trash">删除</button>
+    <button class="btn ghost sm" data-bulk="clear">取消</button>
+  </div>
+</div>
+
+<!-- 导入面板 -->
+<div id="importModal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>添加文章</h3>
+      <button class="btn ghost icon-only" data-close="importModal">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="hint">把公众号文章链接粘进来，一行一条，支持一次多条。</p>
+      <textarea id="importText" rows="7" placeholder="https://mp.weixin.qq.com/s/xxxxxxxx&#10;https://mp.weixin.qq.com/s/yyyyyyyy"></textarea>
+      <div class="row gap">
+        <button class="btn ghost sm" id="btnPaste">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          读剪贴板
+        </button>
+        <button class="btn ghost sm" id="btnPickFile">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          从文件导入
+        </button>
+        <select id="importCategory" class="select sm" title="存入分类"></select>
+      </div>
+      <div class="dropzone" id="dropZone">
+        <input type="file" id="fileInput" multiple accept=".html,.htm,.txt,.csv,.md,.json,text/plain,text/html,text/csv" hidden />
+        <span>把微信导出的聊天记录文件拖到这里（<b>.html / .txt / .csv</b>），自动抽出里面的公众号链接</span>
+      </div>
+      <div id="importProgress" class="progress hidden"></div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn ghost" data-close="importModal">取消</button>
+      <button class="btn primary" id="btnImport">开始导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 阅读视图 -->
+<section id="reader" class="reader hidden">
+  <div class="reader-bar">
+    <button class="btn ghost icon-only" id="readerBack" title="返回 (Esc)">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="reader-title" id="readerTitle"></div>
+    <div class="reader-tools">
+      <button class="btn ghost sm" id="readerOpen">打开原文</button>
+      <button class="btn ghost icon-only" id="readerStar" title="收藏">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m12 4.5 2.4 4.9 5.4.8-3.9 3.8.9 5.3-4.8-2.5-4.8 2.5.9-5.3L4.2 10.2l5.4-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn ghost sm" id="readerToggleRead">标为已读</button>
+      <button class="btn ghost icon-only" id="readerDelete" title="删除（不可恢复）">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7m-6 0 .8 11.2A1.8 1.8 0 0 0 10.6 20h2.8a1.8 1.8 0 0 0 1.8-1.8L16 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="reader-scroll" id="readerScroll">
+    <article class="article">
+      <header class="article-head">
+        <h1 id="articleTitle"></h1>
+        <div class="article-meta">
+          <span id="articleAccount"></span>
+          <span class="sep">·</span>
+          <span id="articleDate"></span>
+          <span class="sep">·</span>
+          <span id="articleWords"></span>
+        </div>
+      </header>
+      <div id="articleFallback" class="fallback hidden"></div>
+      <div id="articleBody" class="article-body"></div>
+      <div class="article-end">— 全文完 —</div>
+
+      <section class="notes">
+        <div class="notes-head">
+          <h4>我的备注</h4>
+          <span class="save-state" id="noteState"></span>
+        </div>
+        <textarea id="noteInput" rows="4" placeholder="记一句为什么存它、哪段有用…（自动保存）"></textarea>
+        <div class="tag-row">
+          <div class="tag-list" id="tagList"></div>
+          <input id="tagInput" class="tag-input" placeholder="+ 标签，回车添加" />
+        </div>
+        <div class="cat-row">
+          <span class="cat-label">分类</span>
+          <select id="readerCategory" class="select sm"></select>
+          <button class="btn ghost sm" id="btnNewCat">新建分类</button>
+        </div>
+      </section>
+    </article>
+  </div>
+</section>
+
+<!-- 回收站 -->
+<div id="trashModal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>回收站</h3>
+      <button class="btn ghost icon-only" data-close="trashModal">✕</button>
+    </div>
+    <div class="sheet-body" id="trashList"></div>
+    <div class="sheet-foot">
+      <button class="btn ghost" data-close="trashModal">关闭</button>
+      <button class="btn danger-ghost" id="btnEmptyTrash">清空回收站</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手机使用说明 -->
+<div id="helpModal" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>手机上怎么用</h3>
+      <button class="btn ghost icon-only" data-close="helpModal">✕</button>
+    </div>
+    <div class="sheet-body" id="helpBody"></div>
+    <div class="sheet-foot">
+      <button class="btn primary" data-close="helpModal">知道了</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<div id="ctxMenu" class="ctxmenu hidden"></div>
+
+<div id="moreMenu" class="ctxmenu hidden">
+  <button data-more="trash">回收站</button>
+  <button data-more="help">手机上怎么用</button>
+  <button data-more="cats">管理分类</button>
+  <button data-more="refresh">全部重新抓取</button>
+</div>
+
+<div id="dropOverlay" class="drop-overlay hidden">
+  <div class="drop-overlay-inner">
+    <div class="drop-overlay-title">松手导入</div>
+    <div class="drop-overlay-sub">支持微信「合并转发」另存的 .html，以及 .txt / .csv / .md</div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

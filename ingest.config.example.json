@@ -1,0 +1,10 @@
+{
+  "serverBase": "http://127.0.0.1:4321",
+  "intervalMs": 5000,
+  "category": "inbox",
+  "sourceLabel": "本地导入",
+  "maxFileMB": 200,
+  "fetchThrottleMs": 350,
+  "retryCooldownMs": 8000,
+  "retryThrottleMs": 900
+}

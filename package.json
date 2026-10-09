@@ -1,0 +1,24 @@
+{
+  "name": "shouwen",
+  "version": "1.0.0",
+  "description": "收文 —— 跑在自己电脑上的公众号稍后读清单，零依赖",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "watch": "node wx-watch.cjs",
+    "once": "node wx-watch.cjs --once",
+    "dry-run": "node wx-watch.cjs --once --dry-run",
+    "test:ui": "node ui-test.cjs",
+    "test:import": "node import-test.cjs"
+  },
+  "keywords": [
+    "read-later",
+    "wechat",
+    "local-first",
+    "zero-dependency"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
