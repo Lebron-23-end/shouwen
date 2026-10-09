@@ -1,0 +1,13 @@
+# 统一换行策略，避免不同平台 clone 出问题
+* text=auto eol=lf
+
+# Windows 批处理必须是 CRLF（历史上被 LF / BOM 坑过：
+# 带 BOM 会让第一行 @echo 失效，整个脚本不执行）
+*.cmd text eol=crlf
+
+# 二进制资源不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
